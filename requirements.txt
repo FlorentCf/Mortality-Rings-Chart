@@ -3,4 +3,3 @@ Pillow
 opencv-python
 imageio-ffmpeg
 pandas
-openpyxl
