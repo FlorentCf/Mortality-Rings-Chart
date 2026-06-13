@@ -38,6 +38,7 @@ NEUTRAL_RING = (231, 221, 200)
 
 PROJECT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = PROJECT_DIR / "outputs"
+EXAMPLE_DAILY_CSV = PROJECT_DIR / "examples" / "belgium_daily_deaths_1992_2025.csv"
 STATBEL_DIR = OUTPUT_DIR / "statbel"
 STATBEL_ZIP = STATBEL_DIR / "TF_DEATHS.zip"
 STATBEL_URL = "https://statbel.fgov.be/sites/default/files/files/opendata/bevolking/TF_DEATHS.zip"
@@ -182,10 +183,13 @@ def download_statbel_zip() -> None:
 
 
 def load_daily_data() -> pd.DataFrame:
-    download_statbel_zip()
-    with ZipFile(STATBEL_ZIP) as archive:
-        with archive.open("TF_DEATHS.txt") as file:
-            df = pd.read_csv(file, sep="|")
+    if EXAMPLE_DAILY_CSV.exists():
+        df = pd.read_csv(EXAMPLE_DAILY_CSV)
+    else:
+        download_statbel_zip()
+        with ZipFile(STATBEL_ZIP) as archive:
+            with archive.open("TF_DEATHS.txt") as file:
+                df = pd.read_csv(file, sep="|")
 
     df["date"] = pd.to_datetime(df["DATE_DEATH"], dayfirst=True)
     df["year"] = df["date"].dt.year.astype(int)

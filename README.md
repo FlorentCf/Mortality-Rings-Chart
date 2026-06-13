@@ -1,83 +1,108 @@
-# Dendrochronology Viz
+# Mortality Rings Visualisation: Dendrochronology Style
 
-Generative animation experiments that map tree-ring growth ideas onto mortality
-time series. The project started as a synthetic tree-growth animation and now
-includes data-driven renderers for Swiss monthly mortality and Belgian weekly
-mortality.
+Generate dendrochronology-inspired mortality animations: a tree cross-section
+where years grow outward, dates sit around each ring, and cells represent
+deaths.
 
-The latest renderer creates a Belgium mortality-ring animation where:
+The canonical render in this repository is the **Belgium chart-only mortality
+rings** animation for 1992-2025.
 
-- one annual band represents one year,
-- one plotted cell represents one death,
-- angle within the ring represents time within the year,
-- weekly excess mortality drives color,
-- weekly death counts and excess mortality drive local ring thickness,
-- each year grows radially from the inner edge to the outer edge,
-- the Dec-Jan seam is blended as a circular year boundary.
-
-Generated videos, source downloads, CSV extracts, and preview images are written
-to `outputs/` and are intentionally ignored by git.
-
-## Setup
+## Quick Start
 
 ```powershell
 python -m pip install -r requirements.txt
+python generate_belgium_mortality_rings_chart_only.py
 ```
 
-## Main Render
+Main outputs:
 
-Belgium weekly mortality, 1992-2025, 3 seconds per year:
-
-```powershell
-python generate_belgium_weekly_mortality_tree.py
+```text
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025.mp4
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_x_h264_aac.mp4
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_final_frame.png
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_contact_sheet.png
 ```
 
-This downloads Statbel daily deaths, aggregates them into calendar-week signals,
-then renders:
+The `_x_h264_aac.mp4` file is encoded with H.264/AVC video, AAC audio, and
+`yuv420p` pixels for better social-platform compatibility.
 
-- `outputs/belgium_weekly_mortality_tree_1992_2025_radial_growth_3s_per_year.mp4`
-- `outputs/belgium_weekly_mortality_tree_1992_2025_radial_growth_3s_per_year_x_h264_aac.mp4`
-- final-frame and contact-sheet PNG previews
+## Visual Grammar
 
-The `_x_h264_aac.mp4` file is re-encoded with H.264 video, AAC audio, and
-`yuv420p` pixels for social-platform compatibility.
+- one annual band = one year
+- one cell = one death
+- position around a band = date within the year
+- band thickness = local death volume
+- color = mortality versus expected baseline
+- animation = radial growth from the center outward
+
+The default video is intentionally chart-only: no title, no labels, no legend,
+just the tree rings growing on a white background.
+
+## Belgian Example Data
+
+The repo includes the Belgian example data needed by the canonical renderer:
+
+```text
+examples/belgium_daily_deaths_1992_2025.csv
+examples/belgium_weekly_deaths_1992_2025.csv
+```
+
+The daily file is used by the final renderer because cells are placed day by
+day. The weekly file is included as a compact analysis-ready example with
+precomputed baseline and excess values.
+
+Belgian source: Statbel open data, number of deaths per day.
 
 ## Other Renderers
 
-```powershell
-python generate_tree_growth.py
-```
-
-Synthetic tree-cell growth animation.
+Annotated version with title and labels:
 
 ```powershell
-python generate_mortality_tree.py
-python generate_mortality_tree_one_death.py
+python generate_belgium_mortality_rings_final.py
 ```
 
-Swiss mortality-ring experiments based on the Swiss BFS PXWEB table. These
-scripts expect the BFS query JSON used during development or can be adapted to a
-direct query payload.
+Generic CSV-driven renderer for adapting the method to another dataset:
 
 ```powershell
-python make_web_versions.py
-python make_x_compatible.py
+python generate_mortality_rings.py --input examples/belgium_weekly_deaths_1992_2025.csv
 ```
 
-Helpers for downscaling and re-encoding generated MP4 files.
+The generic renderer is useful for experimentation, but it is not a pixel match
+for the canonical Belgian chart-only render.
 
-## Data Sources
+## Use Another Dataset
 
-- Belgium: Statbel open data, `TF_DEATHS`, number of deaths per day.
-- Switzerland: Swiss Federal Statistical Office PXWEB table for deaths per
-  month and mortality since 1803.
+For reusable data input, see [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md).
 
-## Requirements
+The generic renderer accepts already-binned rows:
 
-- Python 3.10+
-- `numpy`
-- `Pillow`
-- `opencv-python`
-- `imageio-ffmpeg`
-- `pandas`
-- `openpyxl`
+```csv
+year,start_day,end_day,deaths,baseline,excess
+2020,92,98,3500,2400,0.46
+```
+
+or date-based rows:
+
+```csv
+date,deaths,baseline,excess
+2020-04-06,3500,2400,0.46
+```
+
+If no baseline is provided, it estimates a seasonal rolling baseline from
+nearby previous years. For final editorial work, prefer a documented
+domain-specific baseline.
+
+## Repository Shape
+
+```text
+generate_belgium_mortality_rings_chart_only.py canonical chart-only render
+generate_belgium_mortality_rings_final.py      annotated Belgian render
+generate_belgium_weekly_mortality_tree.py      shared Belgian data/model code
+generate_mortality_rings.py                    generic CSV renderer
+examples/                                      Belgian example data
+docs/DATA_FORMAT.md                            reusable input notes
+requirements.txt                               Python dependencies
+```
+
+Generated videos, preview frames, downloaded source files, and scratch outputs
+are written to `outputs/` and ignored by git.
