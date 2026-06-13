@@ -1,68 +1,80 @@
 # Mortality Rings Visualisation: Dendrochronology Style
 
-Generate tree-ring animations from mortality or other time-series data.
+Generate dendrochronology-inspired mortality animations: a tree cross-section
+where years grow outward, dates sit around each ring, and cells represent
+deaths.
 
-The project renders a dataset as a dendrochronology-inspired cross-section:
-
-- one annual band is one year
-- the position around a band is the date within that year
-- each cell represents a counted event, such as one death
-- local band thickness is driven by the number of cells in that period
-- color is driven by mortality versus a baseline, or by another anomaly column you provide
-- the animation grows from the center outward, like a tree
-
-The default example uses Belgian weekly deaths from 1992 to 2025.
+The canonical render in this repository is the **Belgium chart-only mortality
+rings** animation for 1992-2025.
 
 ## Quick Start
 
 ```powershell
 python -m pip install -r requirements.txt
-python generate_mortality_rings.py
+python generate_belgium_mortality_rings_chart_only.py
 ```
 
-Default outputs:
+Main outputs:
 
 ```text
-outputs/belgium_weekly_deaths_1992_2025.mp4
-outputs/belgium_weekly_deaths_1992_2025_h264_aac.mp4
-outputs/belgium_weekly_deaths_1992_2025_final_frame.png
-outputs/belgium_weekly_deaths_1992_2025_contact_sheet.png
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025.mp4
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_x_h264_aac.mp4
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_final_frame.png
+outputs/belgium_mortality_rings_chart_only_4x3_1992_2025_contact_sheet.png
 ```
 
-The `_h264_aac.mp4` file is encoded with H.264/AVC video, AAC audio, and
+The `_x_h264_aac.mp4` file is encoded with H.264/AVC video, AAC audio, and
 `yuv420p` pixels for better social-platform compatibility.
 
-## Belgian Example
+## Visual Grammar
 
-The tracked example dataset is:
+- one annual band = one year
+- one cell = one death
+- position around a band = date within the year
+- band thickness = local death volume
+- color = mortality versus expected baseline
+- animation = radial growth from the center outward
+
+The default video is intentionally chart-only: no title, no labels, no legend,
+just the tree rings growing on a white background.
+
+## Belgian Example Data
+
+The repo includes the Belgian example data needed by the canonical renderer:
 
 ```text
+examples/belgium_daily_deaths_1992_2025.csv
 examples/belgium_weekly_deaths_1992_2025.csv
 ```
 
-It contains weekly rows with:
+The daily file is used by the final renderer because cells are placed day by
+day. The weekly file is included as a compact analysis-ready example with
+precomputed baseline and excess values.
 
-```text
-year,week_index,start_day,end_day,deaths,baseline,excess
-```
+Belgian source: Statbel open data, number of deaths per day.
 
-In the default render:
+## Other Renderers
 
-- `deaths` controls the number of cells and the local ring thickness
-- `excess` controls the color
-- `baseline` is included for transparency and reuse
-
-Run the example explicitly:
+Annotated version with title and labels:
 
 ```powershell
-python generate_mortality_rings.py `
-  --input examples/belgium_weekly_deaths_1992_2025.csv `
-  --name belgium_mortality_rings
+python generate_belgium_mortality_rings_final.py
 ```
+
+Generic CSV-driven renderer for adapting the method to another dataset:
+
+```powershell
+python generate_mortality_rings.py --input examples/belgium_weekly_deaths_1992_2025.csv
+```
+
+The generic renderer is useful for experimentation, but it is not a pixel match
+for the canonical Belgian chart-only render.
 
 ## Use Another Dataset
 
-You can use either already-binned rows:
+For reusable data input, see [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md).
+
+The generic renderer accepts already-binned rows:
 
 ```csv
 year,start_day,end_day,deaths,baseline,excess
@@ -76,61 +88,21 @@ date,deaths,baseline,excess
 2020-04-06,3500,2400,0.46
 ```
 
-For weekly date rows, the script infers the period length from the date spacing.
-You can force it:
-
-```powershell
-python generate_mortality_rings.py `
-  --input my_weekly_data.csv `
-  --date-column week_start `
-  --count-column deaths `
-  --period-days 7 `
-  --name my_rings
-```
-
-If your file has no `baseline` or `excess` column, the script estimates a
-seasonal rolling baseline from previous years and colors each period against
-that expected value.
-
-## Useful Options
-
-```powershell
-python generate_mortality_rings.py `
-  --input examples/belgium_weekly_deaths_1992_2025.csv `
-  --width 1440 `
-  --height 1080 `
-  --draw-seconds 51 `
-  --cell-unit 1 `
-  --thickness-gain 0.82 `
-  --boundary-smoothing-days 2.2
-```
-
-Important knobs:
-
-- `--cell-unit`: counted units per cell. Use `1` for one cell per death.
-- `--max-cells`: cap the total cells and let the script scale automatically.
-- `--draw-seconds`: how long the tree takes to grow.
-- `--width` and `--height`: output resolution. `1440x1080` is 4:3 HD.
-- `--palette`: comma-separated hex colors from low to high anomaly.
-- `--color-min` and `--color-max`: anomaly values mapped to palette endpoints.
-- `--thickness-gain`: exaggerates or softens local thickness differences.
-- `--boundary-smoothing-days`: smooths the ring outline across neighboring days.
-
-More details are in [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md).
+If no baseline is provided, it estimates a seasonal rolling baseline from
+nearby previous years. For final editorial work, prefer a documented
+domain-specific baseline.
 
 ## Repository Shape
 
 ```text
-generate_mortality_rings.py                  reusable animation generator
-examples/belgium_weekly_deaths_1992_2025.csv Belgian example input
-docs/DATA_FORMAT.md                          input format and mapping notes
-requirements.txt                             Python dependencies
+generate_belgium_mortality_rings_chart_only.py canonical chart-only render
+generate_belgium_mortality_rings_final.py      annotated Belgian render
+generate_belgium_weekly_mortality_tree.py      shared Belgian data/model code
+generate_mortality_rings.py                    generic CSV renderer
+examples/                                      Belgian example data
+docs/DATA_FORMAT.md                            reusable input notes
+requirements.txt                               Python dependencies
 ```
 
 Generated videos, preview frames, downloaded source files, and scratch outputs
 are written to `outputs/` and ignored by git.
-
-## Data Source
-
-Belgian mortality example:
-Statbel open data, daily deaths aggregated into weekly periods for 1992-2025.
